@@ -5,7 +5,7 @@ import doctorsConsulting from "@/assets/doctors-consulting.jpg";
 
 const ValueProp = () => {
   return (
-    <section className="bg-white">
+    <section id="solutions" className="bg-white">
       <div className="section-container">
         {/* HEADER BLOCK */}
         <div className="max-w-[1000px] mb-20 reveal">

@@ -1,4 +1,5 @@
 import Patient from '../models/Patient.js';
+import mongoose from 'mongoose';
 import Appointment from '../models/Appointment.js';
 import MedicalRecord from '../models/MedicalRecord.js';
 import Doctor from '../models/Doctor.js';
@@ -35,7 +36,8 @@ export const registerPatient = async (req, res) => {
     const token = jwt.sign({ id: patient._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
     res.status(201).json({ ...patient._doc, token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Registration Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -53,7 +55,8 @@ export const loginPatient = async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Login Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -63,21 +66,32 @@ export const bookAppointment = async (req, res) => {
   try {
     const { patientId, doctorId, clinicId, date, time, reason } = req.body;
     
-    const doctor = mongoose.Types.ObjectId.isValid(doctorId) 
+    const doctor = (doctorId && mongoose.Types.ObjectId.isValid(doctorId)) 
       ? await Doctor.findById(doctorId) 
-      : await Doctor.findOne({ email: doctorId }); // Fallback for mock doctors if they have emails as IDs
+      : await Doctor.findOne({ email: doctorId });
     
-    const patient = mongoose.Types.ObjectId.isValid(patientId)
+    const patient = (patientId && mongoose.Types.ObjectId.isValid(patientId))
       ? await Patient.findById(patientId)
       : await Patient.findOne({ email: patientId });
 
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found for booking' });
+    }
+
+    // UPDATE PATIENT ASSOCIATION: This ensures the patient shows up in the clinic's and doctor's dashboard tabs
+    patient.clinicId = clinicId;
+    patient.assignedDoctorId = doctor?._id;
+    patient.assignedDoctor = doctor?.name || 'Dr. Specialist';
+    patient.status = 'waiting'; // Set initial status for the appointment queue
+    await patient.save();
+
     const appointment = await Appointment.create({
-      patientId,
+      patientId: patient._id, // Use the database ID
       patientName: patient?.name,
       doctorId,
       doctorName: doctor?.name,
       clinicId,
-      clinicName: doctor?.clinicName || 'Clinic',
+      clinicName: doctor?.clinicName || 'Clinic Name',
       date,
       time,
       reason,
@@ -86,7 +100,8 @@ export const bookAppointment = async (req, res) => {
 
     res.status(201).json(appointment);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Booking Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -97,7 +112,8 @@ export const getPatientAppointments = async (req, res) => {
     const appointments = await Appointment.find({ patientId: req.params.id }).sort({ createdAt: -1 });
     res.json(appointments);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Fetch Appointments Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -134,7 +150,8 @@ export const uploadMedicalRecord = async (req, res) => {
 
     res.status(201).json(record);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Upload Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -144,47 +161,60 @@ export const getPatientTimeline = async (req, res) => {
   try {
     const patientId = req.params.id;
     
-    // Fetch all relevant health events
+    // Fetch all relevant health events in parallel
     const [appointments, records, patient] = await Promise.all([
-      Appointment.find({ patientId, status: { $in: ['upcoming', 'completed'] } }),
-      MedicalRecord.find({ patientId }),
-      mongoose.Types.ObjectId.isValid(patientId) ? Patient.findById(patientId) : Patient.findOne({ _id: patientId })
+      Appointment.find({ patientId, status: { $in: ['upcoming', 'completed'] } }).lean(),
+      MedicalRecord.find({ patientId }).lean(),
+      (patientId && mongoose.Types.ObjectId.isValid(patientId))
+        ? Patient.findById(patientId).lean() 
+        : Patient.findOne({ email: patientId }).lean()
     ]);
 
     // Construct timeline array
     const timeline = [];
 
     // Add consultation history from Patient.opRecords
-    if (patient && patient.opRecords) {
+    if (patient && Array.isArray(patient.opRecords)) {
       patient.opRecords.forEach(op => {
+        if (!op.date) return;
         timeline.push({
-          id: op._id,
+          id: op._id || op.id || Math.random().toString(36).substr(2, 9),
           date: op.date,
           type: 'Consultation',
-          title: `Consultation with ${op.doctorName}`,
-          description: op.diagnosis,
+          title: `Consultation with ${op.doctorName || 'Doctor'}`,
+          description: op.diagnosis || 'General Checkup',
           data: op
         });
       });
     }
 
     // Add uploaded records
-    records.forEach(rec => {
-      timeline.push({
-        id: rec._id,
-        date: rec.date,
-        type: 'Medical Record',
-        title: rec.title,
-        description: rec.summary || 'Lab Report / Imaging',
-        data: rec
+    if (Array.isArray(records)) {
+      records.forEach(rec => {
+        if (!rec.date) return;
+        timeline.push({
+          id: rec._id,
+          date: rec.date,
+          type: 'Medical Record',
+          title: rec.title || 'Medical Record',
+          description: rec.summary || 'Lab Report / Imaging',
+          data: rec
+        });
       });
-    });
+    }
 
-    // Sort by date descending
-    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Sort by date descending with safety checks
+    timeline.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      if (isNaN(dateA)) return 1;
+      if (isNaN(dateB)) return -1;
+      return dateB - dateA;
+    });
 
     res.json(timeline);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Timeline Error:', error);
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };

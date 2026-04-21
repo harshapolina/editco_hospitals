@@ -7,7 +7,7 @@ import doctorTeam from "@/assets/doctor-team.jpg";
 
 const ForDoctors = () => {
   return (
-    <section>
+    <section id="doctors">
       <div className="section-container">
         {/* Header Block */}
         <div className="text-center mb-12 animate-on-scroll">

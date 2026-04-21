@@ -24,9 +24,18 @@ const Waitlist = () => {
               </p>
             </div>
             
-            <form className="flex flex-col sm:flex-row max-w-xl mx-auto p-1.5 bg-white/5 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl items-center">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
+                window.location.href = `mailto:editcomediaoffical@gmail.com?subject=Access Request for Clyra&body=Hello, I would like to request access for my clinic. My contact email is: ${email}`;
+              }}
+              className="flex flex-col sm:flex-row max-w-xl mx-auto p-1.5 bg-white/5 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl items-center"
+            >
               <input 
                 type="email" 
+                name="email"
+                required
                 placeholder="Doctor@clinic.com" 
                 className="flex-1 bg-transparent border-none rounded-full px-8 py-4 text-white placeholder:text-white/20 focus:outline-none transition-all font-bold text-lg w-full"
               />

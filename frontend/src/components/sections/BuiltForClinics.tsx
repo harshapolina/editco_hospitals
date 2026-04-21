@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 
 const BuiltForClinics = () => {
   return (
-    <section className="bg-foreground py-20 lg:py-40 relative overflow-hidden">
+    <section id="about" className="bg-foreground py-20 lg:py-40 relative overflow-hidden">
       {/* DECORATIVE BLOOM */}
       <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[160px] opacity-30 -z-10" />
 

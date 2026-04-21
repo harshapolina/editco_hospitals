@@ -62,7 +62,7 @@ class SttProvider {
     console.log("[STT] Attempting experimental model: gemini-2.5-flash-native-audio-latest...");
     try {
       const audioData = fs.readFileSync(audioPath);
-      const result = await this._callGeminiREST("gemini-2.5-flash-native-audio-latest", audioData, GEMINI_API_KEY);
+      const result = await this._callWithVersionFallback("gemini-2.5-flash-native-audio-latest", audioData, GEMINI_API_KEY);
       if (result) return result;
     } catch (err) {
       console.warn(`[STT] Experimental model failed: ${err.message}`);
@@ -70,13 +70,13 @@ class SttProvider {
 
     // Phase 3: High-Reliability Fallback - Gemini REST (2.0/1.5)
     console.log("[STT] Falling back to standard Gemini models...");
-    const fallbacks = ["gemini-2.0-flash", "gemini-1.5-flash"];
+    const fallbacks = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
     
     for (const modelId of fallbacks) {
       try {
         console.log(`[STT] Attempting fallback: ${modelId}...`);
         const audioData = fs.readFileSync(audioPath);
-        const result = await this._callGeminiREST(modelId, audioData, GEMINI_API_KEY);
+        const result = await this._callWithVersionFallback(modelId, audioData, GEMINI_API_KEY);
         if (result) return result;
       } catch (err) {
         console.warn(`[STT] Fallback ${modelId} failed: ${err.message}`);
@@ -91,7 +91,20 @@ class SttProvider {
     };
   }
 
-  async _callGeminiREST(modelId, audioData, apiKey) {
+  async _callWithVersionFallback(modelId, audioData, apiKey) {
+    // Try v1beta first
+    let result = await this._callGeminiREST(modelId, audioData, apiKey, "v1beta");
+    
+    // If 404, try v1
+    if (!result) {
+      console.log(`[STT] 404 on v1beta for ${modelId}. Trying v1...`);
+      result = await this._callGeminiREST(modelId, audioData, apiKey, "v1");
+    }
+    
+    return result;
+  }
+
+  async _callGeminiREST(modelId, audioData, apiKey, apiVersion) {
     const payload = {
       contents: [{
         parts: [
@@ -108,7 +121,7 @@ class SttProvider {
     };
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +134,7 @@ class SttProvider {
       const transcript = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (transcript && !transcript.includes("[EMPTY]")) {
-        console.log(`[STT] Gemini ${modelId} Success: "${transcript.substring(0, 100)}..."`);
+        console.log(`[STT] Gemini ${modelId} (${apiVersion}) Success: "${transcript.substring(0, 100)}..."`);
         return {
           transcript,
           confidence: 0.7,

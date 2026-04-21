@@ -72,7 +72,7 @@ const Footer = () => {
             <h4 className="text-[12px] font-bold text-white/40 uppercase tracking-widest leading-none">Location</h4>
             <div className="flex flex-col gap-2">
                <p className="text-[15px] font-medium">India</p>
-               <p className="text-[15px] text-white/60">support@clyra.com</p>
+               <p className="text-[15px] text-white/60">editcomediaoffical@gmail.com</p>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ const Footer = () => {
         
         <div className="py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
            <p className="text-[12px] text-white/40">© 2026 Clyra. All rights reserved.</p>
-           <p className="text-[12px] text-white/40 italic">Clear care, powered by intelligence.</p>
+           <p className="text-[12px] text-white/40 italic">Clear care, powerred by editco.media.</p>
         </div>
       </div>
     </footer>

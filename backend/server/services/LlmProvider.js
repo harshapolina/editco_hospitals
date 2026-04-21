@@ -10,8 +10,9 @@ class LlmProvider {
     // We use the full model identifiers discovered in the user's environment.
     const models = [
       "gemini-2.5-flash-native-audio-latest",
-      "gemini-2.5-flash-native-audio-preview-09-2025",
+      "gemini-2.5-flash",
       "gemini-2.0-flash",
+      "gemini-1.5-flash-latest",
       "gemini-1.5-flash"
     ];
 
@@ -22,58 +23,12 @@ class LlmProvider {
       for (let attempt = 0; attempt < maxRetriesPerModel; attempt++) {
         try {
           console.log(`[LLM] Attempting ${modelId} (Attempt ${attempt + 1})...`);
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [{
-                    text: `
-                      Role: Expert Medical Scribe
-                      Context: Extract clinical data for patient "${patientName || 'Unknown'}".
-                      
-                      STRICT EXTRACTION RULES:
-                      1. FULL NARRATIVE: Provide a comprehensive, verbatim-style summary of the "whole matter" discussed. Include specific doctor's words and instructions as a story-like narrative.
-                      2. MEDICINES: 
-                         - Only include medications explicitly mentioned. 
-                         - If a medicine is mentioned without a dose, set strength to "Dose not specified".
-                         - If NO medicines are mentioned, leave the "medicines" array EMPTY: []. Never return an object with empty fields.
-                      3. COMPLETENESS: If a section is truly missing, use "Not explicitly mentioned in consultation".
-                      4. FORMAT: JSON ONLY.
-
-                       JSON SCHEMA:
-                       {
-                         "full_narrative": "Detailed narrative summary of the entire session and the doctor's words.",
-                         "summary": "High-level summary for the dashboard",
-                         "problem": "Patient's primary complaints",
-                         "diagnosis": "Diagnostic assessment or clinical findings",
-                         "prescription": "Brief textual description of the treatment plan",
-                         "medicines": [
-                           {
-                             "name": "Full medicine name",
-                             "strength": "e.g., 500mg or 5ml",
-                             "timing": { "morning": true/false, "afternoon": true/false, "night": true/false },
-                             "instructions": "e.g., After food, empty stomach"
-                           }
-                         ],
-                         "advice": "Specific lifestyle or clinical advice given by doctor",
-                         "follow_up": "Next appointment timing"
-                       }
-
-                      TRANSCRIPT:
-                      ${transcript}
-                    `
-                  }]
-                }],
-                generation_config: {
-                  response_mime_type: "application/json",
-                  temperature: 0.1
-                }
-              })
-            }
-          );
+          let response = await this._fetchWithRetry(modelId, GEMINI_API_KEY, transcript, patientName, "v1beta");
+          
+          if (!response.ok && response.status === 404) {
+            console.warn(`[LLM] 404 on v1beta for ${modelId}. Trying v1...`);
+            response = await this._fetchWithRetry(modelId, GEMINI_API_KEY, transcript, patientName, "v1");
+          }
 
           if (!response.ok) {
             let errorMsg = response.statusText;
@@ -126,6 +81,61 @@ class LlmProvider {
     }
 
     throw new Error(`Critical LLM Failure: ${lastErrorMessage}`);
+  }
+
+  async _fetchWithRetry(modelId, apiKey, transcript, patientName, apiVersion) {
+    return fetch(
+      `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `
+                Role: Expert Medical Scribe
+                Context: Extract clinical data for patient "${patientName || 'Unknown'}".
+                
+                STRICT EXTRACTION RULES:
+                1. FULL NARRATIVE: Provide a comprehensive, verbatim-style summary of the "whole matter" discussed. Include specific doctor's words and instructions as a story-like narrative.
+                2. MEDICINES: 
+                   - Only include medications explicitly mentioned. 
+                   - If a medicine is mentioned without a dose, set strength to "Dose not specified".
+                   - If NO medicines are mentioned, leave the "medicines" array EMPTY: []. Never return an object with empty fields.
+                3. COMPLETENESS: If a section is truly missing, use "Not explicitly mentioned in consultation".
+                4. FORMAT: JSON ONLY.
+
+                 JSON SCHEMA:
+                 {
+                   "full_narrative": "Detailed narrative summary of the entire session and the doctor's words.",
+                   "summary": "High-level summary for the dashboard",
+                   "problem": "Patient's primary complaints",
+                   "diagnosis": "Diagnostic assessment or clinical findings",
+                   "prescription": "Brief textual description of the treatment plan",
+                   "medicines": [
+                     {
+                       "name": "Full medicine name",
+                       "strength": "e.g., 500mg or 5ml",
+                       "timing": { "morning": true/false, "afternoon": true/false, "night": true/false },
+                       "instructions": "e.g., After food, empty stomach"
+                     }
+                   ],
+                   "advice": "Specific lifestyle or clinical advice given by doctor",
+                   "follow_up": "Next appointment timing"
+                 }
+
+                TRANSCRIPT:
+                ${transcript}
+              `
+            }]
+          }],
+          generation_config: {
+            response_mime_type: "application/json",
+            temperature: 0.1
+          }
+        })
+      }
+    );
   }
 }
 
