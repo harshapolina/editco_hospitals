@@ -99,15 +99,20 @@ const ConsultationPage = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Prefer opus codec for smaller, more compatible files
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/webm';
+        
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        if (event.data && event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.start(1000); // Capture data every second
+      mediaRecorder.start(100); // Capture more frequent chunks for stability
       setIsRecording(true);
       setTimer(0);
       setupSpeechRecognition();
@@ -120,6 +125,12 @@ const ConsultationPage = () => {
       // Trigger processing only when the recorder has actually stopped
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size === 0) {
+          console.error("Zero length audio blob detected");
+          toast.error("Audio capture failed. Please try again.");
+          setCurrentState('PREVIEW');
+          return;
+        }
         const url = URL.createObjectURL(audioBlob);
         setRecordedAudioUrl(url);
         setCurrentState('PROCESSING');

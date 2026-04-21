@@ -8,7 +8,8 @@ import LlmProvider from '../services/LlmProvider.js';
 const router = express.Router();
 
 // Ensure upload directory exists
-const uploadDir = path.join(process.cwd(), 'uploads', 'temp');
+// Ensure upload directory exists relative to the backend root
+const uploadDir = path.resolve('uploads', 'temp');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

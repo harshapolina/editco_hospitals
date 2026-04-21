@@ -58,57 +58,29 @@ class SttProvider {
       }
     }
 
-    // Phase 2: High-Reliability Fallback - Gemini REST
-    console.log("[STT] Sarvam failed or returned empty. Falling back to Gemini 2.5 REST...");
+    // Phase 2: Experimental - User Model
+    console.log("[STT] Attempting experimental model: gemini-2.5-flash-native-audio-latest...");
     try {
       const audioData = fs.readFileSync(audioPath);
-      // As requested, use gemini-2.5-flash which is the user's verified model
-      const modelId = "gemini-2.5-flash-native-audio-latest"; 
-      
-      const payload = {
-        contents: [{
-          parts: [
-            { text: "Task: Transcribe this clinical audio recording exactly into English. If it is in Telugu or Hindi mixed with English, translate the regional parts to English while keeping medical terminology. If silent, return '[EMPTY]'." },
-            {
-              inlineData: {
-                data: audioData.toString('base64'),
-                mimeType: "audio/webm"
-              }
-            }
-          ]
-        }],
-        generation_config: {
-          temperature: 0.1
-        }
-      };
+      const result = await this._callGeminiREST("gemini-2.5-flash-native-audio-latest", audioData, GEMINI_API_KEY);
+      if (result) return result;
+    } catch (err) {
+      console.warn(`[STT] Experimental model failed: ${err.message}`);
+    }
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const transcript = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-        if (transcript && !transcript.includes("[EMPTY]")) {
-          console.log(`[STT] Gemini REST Success: "${transcript.substring(0, 100)}..."`);
-          return {
-            transcript,
-            confidence: 0.7,
-            provider: 'gemini'
-          };
-        }
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        console.error(`[STT] Gemini REST Fallback failed: ${response.status}`, errData.error?.message);
+    // Phase 3: High-Reliability Fallback - Gemini REST (2.0/1.5)
+    console.log("[STT] Falling back to standard Gemini models...");
+    const fallbacks = ["gemini-2.0-flash", "gemini-1.5-flash"];
+    
+    for (const modelId of fallbacks) {
+      try {
+        console.log(`[STT] Attempting fallback: ${modelId}...`);
+        const audioData = fs.readFileSync(audioPath);
+        const result = await this._callGeminiREST(modelId, audioData, GEMINI_API_KEY);
+        if (result) return result;
+      } catch (err) {
+        console.warn(`[STT] Fallback ${modelId} failed: ${err.message}`);
       }
-    } catch (fallbackErr) {
-      console.error("[STT] Critical Failure in all STT providers:", fallbackErr.message);
     }
 
     // Final Failure Message
@@ -117,6 +89,47 @@ class SttProvider {
       is_unclear: true,
       provider: 'none'
     };
+  }
+
+  async _callGeminiREST(modelId, audioData, apiKey) {
+    const payload = {
+      contents: [{
+        parts: [
+          { text: "Task: Transcribe this clinical audio recording exactly into English. If it is in Telugu or Hindi mixed with English, translate the regional parts to English while keeping medical terminology. If silent, return '[EMPTY]'." },
+          {
+            inlineData: {
+              data: audioData.toString('base64'),
+              mimeType: "audio/webm"
+            }
+          }
+        ]
+      }],
+      generation_config: { temperature: 0.1 }
+    };
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const transcript = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      if (transcript && !transcript.includes("[EMPTY]")) {
+        console.log(`[STT] Gemini ${modelId} Success: "${transcript.substring(0, 100)}..."`);
+        return {
+          transcript,
+          confidence: 0.7,
+          provider: 'gemini'
+        };
+      }
+    }
+    return null;
   }
 }
 

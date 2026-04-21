@@ -11,7 +11,8 @@ class LlmProvider {
     const models = [
       "gemini-2.5-flash-native-audio-latest",
       "gemini-2.5-flash-native-audio-preview-09-2025",
-      "gemini-2.5-flash"
+      "gemini-2.0-flash",
+      "gemini-1.5-flash"
     ];
 
     const maxRetriesPerModel = 2;
