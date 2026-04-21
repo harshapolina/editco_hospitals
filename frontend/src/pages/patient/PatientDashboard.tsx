@@ -27,6 +27,241 @@ import api from '@/lib/api';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 
+// --- Sub-components (Moved up to fix hoisting errors) ---
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  sub: string;
+  color: 'emerald' | 'rose' | 'sky' | 'amber';
+  icon: React.ReactNode;
+  trend?: string;
+}
+
+const StatCard = ({ title, value, sub, color, icon, trend }: StatCardProps) => {
+  const colorMap = {
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    rose: 'bg-rose-50 text-rose-600 border-rose-100',
+    sky: 'bg-sky-50 text-sky-600 border-sky-100',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100',
+  };
+
+  return (
+    <Card className="border border-[#EEEEEE] shadow-sm rounded-[32px] overflow-hidden bg-white hover:translate-y-[-6px] transition-all duration-500 hover:shadow-2xl hover:shadow-[#F0F0F0] relative group">
+      <CardContent className="p-8 flex flex-col items-start gap-6">
+        <div className={`w-14 h-14 ${colorMap[color]} rounded-2xl flex items-center justify-center shadow-lg shadow-black/5`}>
+          {icon}
+        </div>
+        <div className="space-y-1">
+          <p className="text-[12px] font-bold text-[#999] uppercase tracking-widest">{title}</p>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-3xl font-black text-[#1A1A1A] tracking-tighter">{value}</h3>
+            <span className="text-sm font-bold text-[#BBB]">{sub}</span>
+          </div>
+          {trend && (
+            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider mt-4 px-3 py-1 rounded-full border w-fit ${trend === 'Normal' || trend === 'Excellent' || trend === 'Optimal' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+              <CheckCircle2 size={12} /> {trend}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const RecordUploadModal = ({ onUploaded }: { onUploaded: () => void }) => {
+  const { currentPatient, uploadPatientRecord } = useAppContext();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [formData, setFormData] = useState<{
+    title: string;
+    date: string;
+    notes: string;
+    report: File | null;
+    voice: File | null;
+  }>({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    notes: '',
+    report: null,
+    voice: null
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.report) {
+      toast.error("Please provide a title and attachment.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('date', formData.date);
+      data.append('notes', formData.notes);
+      data.append('report', formData.report);
+      if (formData.voice) data.append('voice', formData.voice);
+
+      await uploadPatientRecord(currentPatient.id || currentPatient._id, data);
+      setIsUploading(false);
+      setIsOpen(false);
+      onUploaded();
+      toast.success("Medical record saved successfully!");
+      
+      // Cleanup
+      setFormData({
+        title: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+        report: null,
+        voice: null
+      });
+    } catch (error: any) {
+       setIsUploading(false);
+       toast.error(error.response?.data?.message || "Upload failed. Please check your connection.");
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <Button 
+        onClick={() => setIsOpen(true)}
+        className="bg-[#1A1A1A] hover:bg-black text-white rounded-[20px] shadow-2xl h-14 px-8 font-black text-sm tracking-wide transition-all active:scale-95"
+      >
+        <Plus size={20} className="mr-2" /> Upload New Record
+      </Button>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+       <div className="absolute inset-0" onClick={() => !isUploading && setIsOpen(false)} />
+       <Card className="w-full max-w-[540px] border-none shadow-2xl rounded-[40px] overflow-hidden bg-white relative z-10 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+          <CardHeader className="bg-[#F9F9F9] border-b border-[#F0F0F0] p-10">
+             <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                   <CardTitle className="text-2xl font-black text-[#1A1A1A] tracking-tight">New Medical Record</CardTitle>
+                   <CardDescription className="text-sm font-medium text-[#999]">Store your clinical findings securely in the cloud</CardDescription>
+                </div>
+                <button 
+                   onClick={() => !isUploading && setIsOpen(false)} 
+                   className="w-10 h-10 rounded-full bg-white border border-[#EEE] flex items-center justify-center text-[#999] hover:text-[#1A1A1A] transition-all"
+                >
+                  ✕
+                </button>
+             </div>
+          </CardHeader>
+          <CardContent className="p-10">
+             <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-2">
+                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Record Title</label>
+                   <Input 
+                      placeholder="e.g. Full Blood Count" 
+                      className="h-14 bg-[#F8F8F8] border-none rounded-2xl font-bold text-lg focus:ring-2 focus:ring-primary/10 transition-all"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      required
+                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Date of Issue</label>
+                    <Input 
+                        type="date" 
+                        className="h-14 bg-[#F8F8F8] border-none rounded-2xl font-bold focus:ring-2 focus:ring-primary/10 transition-all"
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Record Category</label>
+                    <div className="relative">
+                      <select className="w-full h-14 px-4 bg-[#F8F8F8] border-none rounded-2xl font-bold outline-none appearance-none focus:ring-2 focus:ring-primary/10 cursor-pointer">
+                         <option>Lab Report</option>
+                         <option>Prescription</option>
+                         <option>Imaging (X-Ray/MRI)</option>
+                         <option>Discharge Summary</option>
+                      </select>
+                      <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-[#BBB] pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Attach Findings (PDF / JPG)</label>
+                   <div className="relative group/upload">
+                      <input 
+                        type="file" 
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                        onChange={(e) => setFormData({...formData, report: e.target.files ? e.target.files[0] : null})}
+                        required
+                      />
+                      <div className={`h-24 px-8 border-2 border-dashed rounded-3xl flex items-center justify-between transition-all ${formData.report ? 'border-primary bg-primary/5' : 'border-[#EEE] bg-[#F8F8F8] group-hover/upload:border-primary/40'}`}>
+                         <div className="flex items-center gap-4">
+                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${formData.report ? 'bg-primary text-white' : 'bg-white text-[#BBB]'}`}>
+                              <FileText size={24} />
+                           </div>
+                           <div className="flex flex-col">
+                              <span className={`text-[15px] font-bold truncate max-w-[240px] ${formData.report ? 'text-primary' : 'text-[#BBB]'}`}>
+                                 {formData.report ? formData.report.name : 'Click to select or drag file'}
+                              </span>
+                              <span className="text-[10px] text-[#BBB] font-bold uppercase tracking-widest mt-0.5">Max file size 5MB</span>
+                           </div>
+                         </div>
+                         <Upload size={20} className={formData.report ? 'text-primary' : 'text-[#BBB]'} />
+                      </div>
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Voice Insight (Optional)</label>
+                   <div className="flex gap-4">
+                      <div className="relative flex-1">
+                         <input 
+                            type="file" 
+                            accept="audio/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            onChange={(e) => setFormData({...formData, voice: e.target.files ? e.target.files[0] : null})}
+                         />
+                         <div className="h-14 px-6 bg-[#F8F8F8] border border-transparent rounded-2xl flex items-center justify-between transition-all hover:bg-[#F0F0F0]">
+                            <span className="text-[#999] text-sm font-bold truncate">
+                               {formData.voice ? formData.voice.name : 'Attach voice explanation...'}
+                            </span>
+                            <Mic size={18} className="text-blue-500" />
+                         </div>
+                      </div>
+                      <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white cursor-pointer hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95">
+                         <Mic size={24} />
+                      </div>
+                   </div>
+                </div>
+
+                <Button 
+                   type="submit" 
+                   disabled={isUploading}
+                   className="w-full h-16 bg-primary hover:bg-primary/95 text-white rounded-[24px] text-lg font-black shadow-2xl shadow-primary/20 mt-4 active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                   {isUploading ? (
+                     <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span className="tracking-tight">Analyzing & Securely Saving...</span>
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-2">
+                        Complete Upload <Plus size={24} />
+                     </div>
+                   )}
+                </Button>
+             </form>
+          </CardContent>
+       </Card>
+    </div>
+  );
+};
+
 const PatientDashboard = () => {
   const { currentPatient, logoutPatient, bookAppointment, uploadPatientRecord, doctors, clinics } = useAppContext();
   const navigate = useNavigate();
@@ -44,8 +279,8 @@ const PatientDashboard = () => {
     setSearchParams({ tab });
     setActiveTabRaw(tab);
   };
-  const [timeline, setTimeline] = useState([]);
-  const [appointments, setAppointments] = useState([]);
+  const [timeline, setTimeline] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // States for Appointment Booking
@@ -81,7 +316,7 @@ const PatientDashboard = () => {
     fetchPatientData();
   }, [currentPatient]);
 
-  const handleBooking = async (e) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await bookAppointment({
@@ -97,6 +332,21 @@ const PatientDashboard = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      const parts = dateString.split(/[-\/]/);
+      if (parts.length === 3) {
+        return { month: 'APR', day: parts[0].length === 4 ? parts[2] : parts[0] };
+      }
+      return { month: 'APR', day: '18' };
+    }
+    return {
+      month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
+      day: date.getDate().toString().padStart(2, '0')
+    };
+  };
+
   if (!currentPatient) return null;
 
   return (
@@ -104,30 +354,38 @@ const PatientDashboard = () => {
       <div className="flex flex-col gap-10 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Header Stats / Overview */}
+        {/* Shared Header for Overview and Timeline */}
+        {(activeTab === 'overview' || activeTab === 'timeline') && (
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-1">
+              <h1 className="text-[32px] font-bold text-[#1A1A1A] tracking-tight">
+                {activeTab === 'overview' ? 'Your Health Overview' : 'Your Health History'}
+              </h1>
+              <p className="text-[16px] text-[#999] font-medium">
+                {activeTab === 'overview' ? 'Monitoring your vitals and upcoming visits' : 'Chronological record of your medical journey'}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-[#F8F8F8] p-1.5 rounded-2xl border border-[#EEEEEE]">
+              <button 
+                 onClick={() => setActiveTab('overview')}
+                 className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-white text-primary shadow-sm border border-[#EEEEEE]' : 'text-[#999] hover:text-[#666]'}`}
+              >
+                Insights
+              </button>
+              <button 
+                 onClick={() => setActiveTab('timeline')}
+                 className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'timeline' ? 'bg-white text-primary shadow-sm border border-[#EEEEEE]' : 'text-[#999] hover:text-[#666]'}`}
+              >
+                History
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Overview Tab Content */}
         {activeTab === 'overview' && (
           <>
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-1">
-                <h1 className="text-[32px] font-bold text-[#1A1A1A] tracking-tight">Your Health Overview</h1>
-                <p className="text-[16px] text-[#999] font-medium">Monitoring your vitals and upcoming visits</p>
-              </div>
-              
-              <div className="flex items-center gap-4 bg-[#F8F8F8] p-1.5 rounded-2xl border border-[#EEEEEE]">
-                <button 
-                   onClick={() => setActiveTab('overview')}
-                   className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-white text-primary shadow-sm border border-[#EEEEEE]' : 'text-[#999] hover:text-[#666]'}`}
-                >
-                  Insights
-                </button>
-                <button 
-                   onClick={() => setActiveTab('timeline')}
-                   className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'timeline' ? 'bg-white text-primary shadow-sm border border-[#EEEEEE]' : 'text-[#999] hover:text-[#666]'}`}
-                >
-                  History
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <StatCard 
                 title="Blood Group" 
@@ -180,36 +438,60 @@ const PatientDashboard = () => {
                 <CardContent className="p-0">
                   {appointments.filter(a => a.status === 'upcoming').length > 0 ? (
                     <div className="divide-y divide-[#F5F5F5]">
-                      {appointments.filter(a => a.status === 'upcoming').map((apt) => (
-                        <div key={apt._id} className="p-8 flex items-center justify-between group hover:bg-[#F9F9F9] transition-all duration-300">
-                          <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-primary/5 rounded-[24px] flex flex-col items-center justify-center border border-primary/10">
-                              <span className="text-[11px] font-bold text-primary uppercase tracking-widest">{apt.date.split('/')[1] || 'APR'}</span>
-                              <span className="text-[28px] font-black text-primary leading-none mt-1">{apt.date.split('/')[0] || '18'}</span>
+                      {appointments.filter(a => a.status === 'upcoming').map((apt) => {
+                        const { month, day } = formatDate(apt.date);
+                        return (
+                          <div key={apt._id} className="p-8 flex items-center justify-between group hover:bg-[#F9F9F9]/50 transition-all duration-500 relative overflow-hidden">
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500" />
+                            <div className="flex items-center gap-8 z-10">
+                              <div className="relative">
+                                <div className="w-20 h-20 bg-gradient-to-br from-primary to-[#2D7A65] rounded-[24px] flex flex-col items-center justify-center shadow-xl shadow-primary/20 transform group-hover:rotate-3 transition-transform duration-500">
+                                  <span className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">{month}</span>
+                                  <span className="text-3xl font-black text-white leading-none mt-1">{day}</span>
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full border-4 border-[#F9F9F9] flex items-center justify-center shadow-sm">
+                                  <Calendar size={14} className="text-primary" />
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-4">
+                                <div>
+                                  <div className="flex items-center gap-3 mb-1.5">
+                                    <h4 className="font-black text-xl text-[#1A1A1A] tracking-tight group-hover:text-primary transition-colors">Dr. {apt.doctorName}</h4>
+                                    <Badge className="bg-emerald-500 text-white border-none hover:bg-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-[0.15em] px-2.5 h-5 flex items-center justify-center shadow-md shadow-emerald-100">Verified</Badge>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-[#666] text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity">
+                                    <span className="flex items-center gap-2"><MapPin size={16} className="text-primary" /> {apt.clinicName}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-2.5 bg-white border border-[#EEEEEE] px-4 py-2 rounded-2xl shadow-sm group-hover:border-primary/20 transition-colors">
+                                    <Clock size={16} className="text-primary animate-pulse-custom" /> 
+                                    <span className="text-sm font-black text-[#1A1A1A]">{apt.time}</span>
+                                  </div>
+                                  <div className="bg-[#1A1A1A] text-white px-5 py-2 rounded-2xl flex items-center gap-2 shadow-lg shadow-black/10 group-hover:bg-primary transition-colors">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Token</span>
+                                    <span className="text-sm font-black">#{apt.tokenNumber || '00'}</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-bold text-lg text-[#1A1A1A]">Dr. {apt.doctorName}</h4>
-                                <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 rounded-lg text-[10px] uppercase tracking-wider px-2">Verified</Badge>
-                              </div>
-                              <p className="text-[#666] text-sm font-medium flex items-center gap-1.5"><MapPin size={14} className="text-[#999]" /> {apt.clinicName}</p>
-                              <div className="flex items-center gap-4 mt-3">
-                                <span className="flex items-center gap-1.5 text-xs font-bold text-[#999]">
-                                  <Clock size={14} className="text-primary" /> {apt.time}
-                                </span>
-                                <span className="text-[10px] bg-[#1A1A1A] text-white px-3 py-1 rounded-full font-bold uppercase tracking-widest">
-                                  TOKEN {apt.tokenNumber || '#00'}
-                                </span>
-                              </div>
+                            
+                            <div className="flex items-center gap-3 opacity-0 translate-x-10 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-700 delay-100">
+                               <Button variant="outline" className="rounded-2xl font-black border-[#EEEEEE] h-12 px-6 hover:bg-primary hover:text-white hover:border-primary shadow-sm active:scale-95 transition-all">
+                                 Reschedule
+                               </Button>
+                               <Button className="rounded-2xl w-12 h-12 p-0 bg-[#F8F8F8] text-[#1A1A1A] hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-100 transition-all shadow-sm flex items-center justify-center">
+                                 <Plus className="rotate-45" size={24} />
+                               </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-                            <Button variant="outline" className="rounded-xl font-bold border-[#EEEEEE] h-10 px-5">Manage</Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
+
                     <div className="p-24 text-center">
                       <div className="w-24 h-24 bg-[#F8F8F8] rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-[#EEEEEE]">
                         <Calendar className="text-[#BBB] w-10 h-10" />
@@ -446,12 +728,6 @@ const PatientDashboard = () => {
         {/* Health Timeline Tab */}
         {activeTab === 'timeline' && (
           <div className="max-w-5xl mx-auto space-y-12 py-10 w-full animate-in fade-in duration-700">
-             <div className="text-center space-y-3">
-                <Badge className="bg-primary/10 text-primary border-none font-bold text-[11px] uppercase tracking-[0.2em] px-4 py-1 mb-2">Patient Journey</Badge>
-                <h2 className="text-[44px] font-black text-[#1A1A1A] tracking-tighter leading-tight">Your Health Timeline</h2>
-                <p className="text-[#999] font-medium text-lg max-w-2xl mx-auto">A secure, chronological overview of every medical interaction and document since your journey with Clyra began.</p>
-             </div>
-
              <div className="relative pt-16">
                 <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary/50 via-[#EEEEEE] to-transparent -ml-px" />
                 
@@ -503,224 +779,6 @@ const PatientDashboard = () => {
   );
 };
 
-// --- Sub-components ---
-
-const StatCard = ({ title, value, sub, color, icon, trend }) => {
-  const colorMap = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    rose: 'bg-rose-50 text-rose-600 border-rose-100',
-    sky: 'bg-sky-50 text-sky-600 border-sky-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100',
-  };
-
-  return (
-    <Card className="border border-[#EEEEEE] shadow-sm rounded-[32px] overflow-hidden bg-white hover:translate-y-[-6px] transition-all duration-500 hover:shadow-2xl hover:shadow-[#F0F0F0] relative group">
-      <CardContent className="p-8 flex flex-col items-start gap-6">
-        <div className={`w-14 h-14 ${colorMap[color]} rounded-2xl flex items-center justify-center shadow-lg shadow-black/5`}>
-          {icon}
-        </div>
-        <div className="space-y-1">
-          <p className="text-[12px] font-bold text-[#999] uppercase tracking-widest">{title}</p>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-[#1A1A1A] tracking-tighter">{value}</h3>
-            <span className="text-sm font-bold text-[#BBB]">{sub}</span>
-          </div>
-          {trend && (
-            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider mt-4 px-3 py-1 rounded-full border w-fit ${trend === 'Normal' || trend === 'Excellent' || trend === 'Optimal' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-              <CheckCircle2 size={12} /> {trend}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const RecordUploadModal = ({ onUploaded }) => {
-  const { currentPatient, uploadPatientRecord } = useAppContext();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    date: new Date().toISOString().split('T')[0],
-    notes: '',
-    report: null,
-    voice: null
-  });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.report) {
-      toast.error("Please provide a title and attachment.");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('date', formData.date);
-      data.append('notes', formData.notes);
-      data.append('report', formData.report);
-      if (formData.voice) data.append('voice', formData.voice);
-
-      await uploadPatientRecord(currentPatient.id || currentPatient._id, data);
-      setIsUploading(false);
-      setIsOpen(false);
-      onUploaded();
-      toast.success("Medical record saved successfully!");
-      
-      // Cleanup
-      setFormData({
-        title: '',
-        date: new Date().toISOString().split('T')[0],
-        notes: '',
-        report: null,
-        voice: null
-      });
-    } catch (error) {
-       setIsUploading(false);
-       toast.error(error.response?.data?.message || "Upload failed. Please check your connection.");
-    }
-  };
-
-  if (!isOpen) {
-    return (
-      <Button 
-        onClick={() => setIsOpen(true)}
-        className="bg-[#1A1A1A] hover:bg-black text-white rounded-[20px] shadow-2xl h-14 px-8 font-black text-sm tracking-wide transition-all active:scale-95"
-      >
-        <Plus size={20} className="mr-2" /> Upload New Record
-      </Button>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-       <div className="absolute inset-0" onClick={() => !isUploading && setIsOpen(false)} />
-       <Card className="w-full max-w-[540px] border-none shadow-2xl rounded-[40px] overflow-hidden bg-white relative z-10 animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
-          <CardHeader className="bg-[#F9F9F9] border-b border-[#F0F0F0] p-10">
-             <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                   <CardTitle className="text-2xl font-black text-[#1A1A1A] tracking-tight">New Medical Record</CardTitle>
-                   <CardDescription className="text-sm font-medium text-[#999]">Store your clinical findings securely in the cloud</CardDescription>
-                </div>
-                <button 
-                  onClick={() => !isUploading && setIsOpen(false)} 
-                  className="w-10 h-10 rounded-full bg-white border border-[#EEE] flex items-center justify-center text-[#999] hover:text-[#1A1A1A] transition-all"
-                >
-                  ✕
-                </button>
-             </div>
-          </CardHeader>
-          <CardContent className="p-10">
-             <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="space-y-2">
-                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Record Title</label>
-                   <Input 
-                      placeholder="e.g. Full Blood Count" 
-                      className="h-14 bg-[#F8F8F8] border-none rounded-2xl font-bold text-lg focus:ring-2 focus:ring-primary/10 transition-all"
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                      required
-                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Date of Issue</label>
-                    <Input 
-                        type="date" 
-                        className="h-14 bg-[#F8F8F8] border-none rounded-2xl font-bold focus:ring-2 focus:ring-primary/10 transition-all"
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Record Category</label>
-                    <div className="relative">
-                      <select className="w-full h-14 px-4 bg-[#F8F8F8] border-none rounded-2xl font-bold outline-none appearance-none focus:ring-2 focus:ring-primary/10 cursor-pointer">
-                         <option>Lab Report</option>
-                         <option>Prescription</option>
-                         <option>Imaging (X-Ray/MRI)</option>
-                         <option>Discharge Summary</option>
-                      </select>
-                      <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-[#BBB] pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Attach Findings (PDF / JPG)</label>
-                   <div className="relative group/upload">
-                      <input 
-                        type="file" 
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                        onChange={(e) => setFormData({...formData, report: e.target.files[0]})}
-                        required
-                      />
-                      <div className={`h-24 px-8 border-2 border-dashed rounded-3xl flex items-center justify-between transition-all ${formData.report ? 'border-primary bg-primary/5' : 'border-[#EEE] bg-[#F8F8F8] group-hover/upload:border-primary/40'}`}>
-                         <div className="flex items-center gap-4">
-                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${formData.report ? 'bg-primary text-white' : 'bg-white text-[#BBB]'}`}>
-                              <FileText size={24} />
-                           </div>
-                           <div className="flex flex-col">
-                              <span className={`text-[15px] font-bold truncate max-w-[240px] ${formData.report ? 'text-primary' : 'text-[#BBB]'}`}>
-                                 {formData.report ? formData.report.name : 'Click to select or drag file'}
-                              </span>
-                              <span className="text-[10px] text-[#BBB] font-bold uppercase tracking-widest mt-0.5">Max file size 5MB</span>
-                           </div>
-                         </div>
-                         <Upload size={20} className={formData.report ? 'text-primary' : 'text-[#BBB]'} />
-                      </div>
-                   </div>
-                </div>
-
-                <div className="space-y-2">
-                   <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-[0.2em] px-1">Voice Insight (Optional)</label>
-                   <div className="flex gap-4">
-                      <div className="relative flex-1">
-                         <input 
-                            type="file" 
-                            accept="audio/*"
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            onChange={(e) => setFormData({...formData, voice: e.target.files[0]})}
-                         />
-                         <div className="h-14 px-6 bg-[#F8F8F8] border border-transparent rounded-2xl flex items-center justify-between transition-all hover:bg-[#F0F0F0]">
-                            <span className="text-[#999] text-sm font-bold truncate">
-                               {formData.voice ? formData.voice.name : 'Attach voice explanation...'}
-                            </span>
-                            <Mic size={18} className="text-blue-500" />
-                         </div>
-                      </div>
-                      <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white cursor-pointer hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95">
-                         <Mic size={24} />
-                      </div>
-                   </div>
-                </div>
-
-                <Button 
-                   type="submit" 
-                   disabled={isUploading}
-                   className="w-full h-16 bg-primary hover:bg-primary/95 text-white rounded-[24px] text-lg font-black shadow-2xl shadow-primary/20 mt-4 active:scale-[0.98] transition-all disabled:opacity-50"
-                >
-                   {isUploading ? (
-                     <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span className="tracking-tight">Analyzing & Securely Saving...</span>
-                     </div>
-                   ) : (
-                     <div className="flex items-center gap-2">
-                        Complete Upload <Plus size={24} />
-                     </div>
-                   )}
-                </Button>
-             </form>
-          </CardContent>
-       </Card>
-    </div>
-  );
-};
+// --- End of Dashboard ---
 
 export default PatientDashboard;

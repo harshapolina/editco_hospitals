@@ -27,6 +27,7 @@ export interface Doctor {
   email: string;
   clinicId?: string;
   clinicName?: string;
+  image?: string;
 }
 
 export interface Prescription {
@@ -64,6 +65,12 @@ export interface Patient {
   token?: string;
   status?: 'waiting' | 'consultation' | 'completed';
   clinicId?: string;
+  vitals?: {
+    bloodGroup?: string;
+    pulseRate?: string;
+    oxygenLevel?: string;
+    bmi?: string;
+  };
 }
 
 export interface Notification {
@@ -112,7 +119,8 @@ export const initialDoctors: Doctor[] = [
     currentToken: "#07",
     phone: "+998 90 123 45 67",
     email: "ayasha@docinpoc.com",
-    clinicId: "clinic-1"
+    clinicId: "clinic-1",
+    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&h=200&auto=format&fit=crop"
   },
   {
     id: "2",
@@ -128,7 +136,8 @@ export const initialDoctors: Doctor[] = [
     currentToken: "#12",
     phone: "+998 90 987 65 43",
     email: "rajan@docinpoc.com",
-    clinicId: "clinic-1"
+    clinicId: "clinic-1",
+    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop"
   },
   {
     id: "3",
@@ -144,7 +153,8 @@ export const initialDoctors: Doctor[] = [
     currentToken: "#03",
     phone: "+998 90 555 11 22",
     email: "priya@docinpoc.com",
-    clinicId: "clinic-1"
+    clinicId: "clinic-1",
+    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=200&h=200&auto=format&fit=crop"
   },
   {
     id: "4",
@@ -160,7 +170,8 @@ export const initialDoctors: Doctor[] = [
     currentToken: "#05",
     phone: "+998 90 444 88 99",
     email: "samuel@docinpoc.com",
-    clinicId: "clinic-1"
+    clinicId: "clinic-1",
+    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200&h=200&auto=format&fit=crop"
   }
 ];
 
