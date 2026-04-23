@@ -1,163 +1,147 @@
-import { Plus, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAppContext } from "@/context/AppContext";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAppContext } from '@/context/AppContext';
 
-import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { LogIn, Key, Mail, Building2, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 
 const ClinicLogin = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { loginClinic } = useAppContext();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       await loginClinic({ email, password });
       toast.success("Welcome back to your Medical Center!");
       navigate("/clinic/dashboard");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed. Check your credentials.");
+      toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-white">
-      {/* LEFT PANEL */}
-      <div className="w-full md:w-1/2 bg-primary p-12 flex flex-col justify-between text-white relative overflow-hidden">
-        {/* Logo & Back */}
-        <div className="flex items-center justify-between mb-20 relative z-10">
-          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate(-1)}>
-             <button className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
-               <Plus className="w-4 h-4 text-white rotate-45" strokeWidth={3} />
-             </button>
-             <span className="text-sm font-medium opacity-70 group-hover:opacity-100 transition-opacity">Back</span>
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8FAFC] relative overflow-hidden">
+      {/* Back Button */}
+      <Button 
+        variant="ghost" 
+        className="absolute top-8 left-8 z-20 gap-2 text-gray-500 hover:text-primary rounded-xl"
+        onClick={() => navigate(-1)}
+      >
+        <ChevronLeft size={18} /> Back
+      </Button>
+
+      {/* Decorative background elements */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl opacity-50" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-3xl opacity-50" />
+      
+      <Card className="w-full max-w-[420px] z-10 border-none shadow-2xl bg-white/80 backdrop-blur-xl transition-all duration-500 hover:shadow-primary/10">
+        <CardHeader className="space-y-2 text-center pb-8">
+          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-700">
+            <Building2 className="text-white w-8 h-8" />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-              <Plus className="w-4 h-4 text-primary" strokeWidth={3} />
-            </div>
-            <span className="text-xl font-semibold">Clyra</span>
-          </div>
-        </div>
-
-
-        {/* Brand Message */}
-        <div className="relative z-10 max-w-md">
-          <h2 className="text-[32px] sm:text-[40px] leading-tight font-light mb-6">
-            Streamline your clinic.<br />
-            Manage smarter.
-          </h2>
-          <p className="text-[14px] text-white/70 leading-relaxed mb-12">
-            Everything your clinic needs — doctors, patients, and records — all in one place.
-          </p>
-
-          {/* Stat Chips */}
-          <div className="flex flex-wrap gap-3">
-            {[
-              { label: "10k+ Doctors" },
-              { label: "50k+ Patients" },
-              { label: "24/7 Support" }
-            ].map((stat, i) => (
-              <div 
-                key={i}
-                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-[12px] font-medium backdrop-blur-sm"
-              >
-                {stat.label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Decorative circle backdrop */}
-        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-      </div>
-
-      {/* RIGHT PANEL */}
-      <div className="w-full md:w-1/2 bg-white p-12 flex flex-col justify-center items-center">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-10">
-            <h1 className="text-[28px] font-normal text-[#1A1A1A] mb-2">Welcome back 👋</h1>
-            <p className="text-[14px] text-[#999]">Log in to your clinic account</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-8">
-            {/* Email Field */}
-            <div className="space-y-1">
-              <label className="text-[12px] font-medium text-[#999] uppercase tracking-wider">
-                Email address
-              </label>
-              <input 
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="clinic@example.com"
-                className="w-full py-3 bg-transparent border-b-2 border-[#EEEEEE] focus:border-primary outline-none text-[15px] transition-colors"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-1 relative">
-              <label className="text-[12px] font-medium text-[#999] uppercase tracking-wider">
-                Password
-              </label>
-              <div className="relative">
-                <input 
-                  type={showPassword ? "text" : "password"}
+          <CardTitle className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Clinic Portal</CardTitle>
+          <CardDescription className="text-gray-500 text-lg">
+            Manage your medical center operations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <div className="relative group">
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+                <Input
+                  type="email"
+                  placeholder="clinic@example.com"
+                  className="pl-11 h-12 bg-white border-gray-100 focus:border-primary transition-all rounded-xl"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="relative group">
+                <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="pl-11 h-12 bg-white border-gray-100 focus:border-primary transition-all rounded-xl"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full py-3 bg-transparent border-b-2 border-[#EEEEEE] focus:border-primary outline-none text-[15px] transition-colors"
+                  required
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-[#999] hover:text-primary transition-colors"
+                  className="absolute right-3 top-3.5 text-gray-400 hover:text-primary transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <div className="text-right mt-2">
-                <button type="button" className="text-[13px] text-[#999] hover:text-primary transition-colors font-medium">
-                  Forgot password?
-                </button>
-              </div>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 cursor-pointer text-gray-600">
+                <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" />
+                Remember clinic
+              </label>
+              <a href="#" className="text-primary hover:text-primary/80 font-medium transition-colors">Forgot password?</a>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-4 pt-4">
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full h-[52px] bg-primary text-white rounded-full flex items-center justify-center gap-2 text-[15px] font-semibold hover:bg-primary/95 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
-              >
-                {loading ? "Logging in..." : "Log In"} {!loading && <ArrowRight size={18} />}
-              </button>
-
-              <div className="relative flex items-center py-4">
-                <div className="flex-grow border-t border-[#EEEEEE]"></div>
-                <span className="flex-shrink mx-4 text-[12px] text-[#999] font-medium uppercase tracking-widest">OR</span>
-                <div className="flex-grow border-t border-[#EEEEEE]"></div>
-              </div>
-
-              <button 
-                type="button"
-                onClick={() => navigate("/clinic/register")}
-                className="w-full h-[52px] bg-transparent border-[1.5px] border-[#1A1A1A] text-[#1A1A1A] rounded-full text-[15px] font-semibold hover:bg-[#1A1A1A] hover:text-white transition-all"
-              >
-                Create Clinic Account
-              </button>
-            </div>
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-primary hover:bg-primary/95 text-white rounded-xl font-semibold text-lg shadow-lg shadow-primary/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Logging in...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  Log In <LogIn className="w-5 h-5" />
+                </div>
+              )}
+            </Button>
           </form>
-        </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4 pb-8">
+          <p className="text-center text-sm text-gray-600">
+            Need a clinic account? <Link to="/clinic/register" className="text-primary font-bold hover:underline">Register your center</Link>
+          </p>
+          <div className="text-center w-full relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-100"></div>
+            </div>
+            <span className="relative z-10 bg-white px-3 text-xs uppercase text-gray-400 font-medium">Clyra v2.0</span>
+          </div>
+          <p className="text-center text-sm text-gray-500 font-medium italic">
+            "Better data, better healthcare."
+          </p>
+        </CardFooter>
+      </Card>
+      
+      {/* Status indicator */}
+      <div className="absolute bottom-6 left-6 flex items-center gap-2 text-gray-400 text-sm font-medium">
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        Systems Operational
       </div>
     </div>
   );
