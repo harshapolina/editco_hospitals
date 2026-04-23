@@ -193,6 +193,22 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           }
         });
         setClinics(mergedClinics);
+
+        // SYNC CURRENT CLINIC PROFILE
+        if (currentClinic) {
+          const updatedSelf = liveClinics.find((c: any) => 
+            (c.id || c._id) === (currentClinic.id || currentClinic._id) || 
+            (c.email && c.email.toLowerCase() === currentClinic.email.toLowerCase())
+          );
+          if (updatedSelf) {
+            const normalizedSelf = { ...updatedSelf, id: updatedSelf.id || updatedSelf._id };
+            const hasChanged = JSON.stringify(normalizedSelf) !== JSON.stringify(currentClinic);
+            if (hasChanged) {
+              setCurrentClinic(normalizedSelf);
+              localStorage.setItem('clinic_user', JSON.stringify(normalizedSelf));
+            }
+          }
+        }
       }
     } catch (error) {
       console.warn('Backend offline or error fetching data. Maintaining local/mock state.');

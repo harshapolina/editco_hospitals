@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
+import { PatientRegisterPayload } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { toast } from 'sonner';
 import { User, Mail, Key, ChevronLeft, Award, Calendar, Phone } from 'lucide-react';
 
 const PatientRegister = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PatientRegisterPayload>({
     name: '',
     email: '',
     password: '',
