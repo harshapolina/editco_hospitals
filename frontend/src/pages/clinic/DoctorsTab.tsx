@@ -18,9 +18,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const DoctorsTab = () => {
-  const { doctors, addDoctor, toggleDoctorStatus, deleteDoctor, currentClinic } = useAppContext();
+  const { doctors, addDoctor, updateDoctor, deleteDoctor, currentClinic } = useAppContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
@@ -244,55 +251,70 @@ const DoctorsTab = () => {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleDoctorStatus(doctor.id);
-                            }}
-                            className={`w-[32px] h-[32px] rounded-lg border flex items-center justify-center transition-all ${
-                              doctor.status === 'available' ? 'bg-green-50 border-green-200 text-green-600 shadow-sm shadow-green-100' : 
-                              doctor.status === 'busy' ? 'bg-red-50 border-red-200 text-red-600' :
-                              'bg-orange-50 border-orange-200 text-orange-600'
-                            }`}
-                          >
-                            <div className={`w-1.5 h-1.5 rounded-full ${
-                              doctor.status === 'available' ? 'bg-green-500' : 
-                              doctor.status === 'busy' ? 'bg-red-500' : 
-                              'bg-orange-500 animate-pulse'
-                            }`} />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-[11px] font-bold">Toggle Status</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className={cn(
+                                  "w-[32px] h-[32px] rounded-full border flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm",
+                                  doctor.status === 'available' ? 'bg-green-50 border-green-200' : 
+                                  doctor.status === 'busy' ? 'bg-red-50 border-red-200' :
+                                  'bg-orange-50 border-orange-200'
+                                )}>
+                                  <div className={cn(
+                                    "w-2.5 h-2.5 rounded-full animate-pulse-subtle",
+                                    doctor.status === 'available' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 
+                                    doctor.status === 'busy' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
+                                    'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]'
+                                  )} />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-36 rounded-xl p-1.5 shadow-2xl border-none">
+                                <DropdownMenuItem 
+                                  onClick={() => updateDoctor(doctor.id, { status: 'available' })}
+                                  className="flex items-center gap-2 rounded-lg cursor-pointer focus:bg-green-50 focus:text-green-600 font-semibold text-xs py-2"
+                                >
+                                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                                  Available
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => updateDoctor(doctor.id, { status: 'busy' })}
+                                  className="flex items-center gap-2 rounded-lg cursor-pointer focus:bg-red-50 focus:text-red-600 font-semibold text-xs py-2"
+                                >
+                                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                                  Busy
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => updateDoctor(doctor.id, { status: 'break' })}
+                                  className="flex items-center gap-2 rounded-lg cursor-pointer focus:bg-orange-50 focus:text-orange-600 font-semibold text-xs py-2"
+                                >
+                                  <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                  Break
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-black text-white text-[10px] font-bold py-1 px-2 rounded-md">
+                            Toggle Status
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm(`Are you sure you want to permanently remove Dr. ${doctor.name}? This action cannot be undone.`)) {
-                                deleteDoctor(doctor._id || doctor.id);
-                              }
-                            }}
-                            className="w-[32px] h-[32px] rounded-lg border border-red-100 bg-red-50/50 text-red-500 flex items-center justify-center transition-all hover:bg-red-500 hover:text-white group/trash"
-                          >
-                            <Trash2 size={14} className="group-hover/trash:scale-110 transition-transform" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-[11px] font-bold text-red-500">Delete Doctor</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to permanently remove Dr. ${doctor.name}? This action cannot be undone.`)) {
+                          deleteDoctor(doctor._id || doctor.id);
+                        }
+                      }}
+                      className="w-[32px] h-[32px] rounded-lg border border-red-100 bg-red-50/50 text-red-500 flex items-center justify-center transition-all hover:bg-red-500 hover:text-white group/trash ml-1"
+                    >
+                      <Trash2 size={14} className="group-hover/trash:scale-110 transition-transform" />
+                    </button>
+
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-6">
@@ -316,7 +338,6 @@ const DoctorsTab = () => {
                   </div>
                   <div className="flex items-center justify-between text-[13px]">
                     <div className="flex items-center gap-2 text-[#666] font-medium">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
                       Current Token
                     </div>
                     <span className={`font-bold ${doctor.currentToken ? 'text-primary' : 'text-[#666]'}`}>

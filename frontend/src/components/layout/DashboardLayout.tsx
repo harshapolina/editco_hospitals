@@ -250,8 +250,8 @@ const DashboardLayout = ({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[240px] p-2 rounded-2xl shadow-2xl border-[#EEEEEE] animate-in slide-in-from-top-4 duration-300">
-              <div className="flex items-center gap-3 p-3 mb-2 bg-[#F8F8F8] rounded-xl border border-[#EEEEEE]">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-3 p-3.5 mb-2 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10">
+                <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-lg shadow-xl shadow-primary/20">
                   {role === 'patient' 
                     ? (currentPatient?.name || 'P').split(' ').map(n => n[0]).join('') 
                     : role === 'doctor'
@@ -259,10 +259,10 @@ const DashboardLayout = ({
                     : (clinicName || 'C').split(' ').map(n => n[0]).join('')}
                 </div>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-sm font-bold text-[#1A1A1A] truncate">
+                  <span className="text-[15px] font-bold text-[#1A1A1A] truncate leading-tight">
                     {role === 'patient' ? currentPatient?.name : role === 'doctor' ? currentDoctor?.name : clinicName}
                   </span>
-                  <span className="text-[10px] text-[#999] font-medium truncate">
+                  <span className="text-[11px] text-[#666] font-medium truncate mt-0.5">
                     {role === 'patient' ? currentPatient?.email : role === 'doctor' ? currentDoctor?.email : settingsData.email}
                   </span>
                 </div>
@@ -272,24 +272,31 @@ const DashboardLayout = ({
                 <>
                   <DropdownMenuItem 
                     onClick={() => setIsSettingsOpen(true)}
-                    className="p-3 focus:bg-[#F0F7F4] focus:text-primary rounded-xl cursor-pointer font-semibold transition-colors"
+                    className="p-3.5 focus:bg-primary/5 focus:text-primary rounded-xl cursor-pointer font-bold transition-all border border-transparent focus:border-primary/10 mb-1"
                   >
-                    <Settings size={18} className="mr-3 opacity-70" />
-                    <span className="text-sm">Clinic Settings</span>
+                    <Settings size={18} className="mr-3 text-primary/70" />
+                    <span className="text-[13px]">Clinic Profile & Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => navigate('/clinic/dashboard')}
-                    className="p-3 focus:bg-[#F0F7F4] focus:text-primary rounded-xl cursor-pointer font-semibold transition-colors"
+                    className="p-3.5 focus:bg-primary/5 focus:text-primary rounded-xl cursor-pointer font-bold transition-all border border-transparent focus:border-primary/10 mb-1"
                   >
-                    <Stethoscope size={18} className="mr-3 opacity-70" />
-                    <span className="text-sm">Manage Doctors</span>
+                    <Stethoscope size={18} className="mr-3 text-primary/70" />
+                    <span className="text-[13px]">Manage Doctors</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-3 focus:bg-[#F0F7F4] focus:text-primary rounded-xl cursor-pointer font-semibold transition-colors"
+                    onClick={() => navigate('/clinic/dashboard/patients')}
+                    className="p-3.5 focus:bg-primary/5 focus:text-primary rounded-xl cursor-pointer font-bold transition-all border border-transparent focus:border-primary/10 mb-1"
                   >
-                    <Users size={18} className="mr-3 opacity-70" />
-                    <span className="text-sm">Clinic Information</span>
+                    <Users size={18} className="mr-3 text-primary/70" />
+                    <span className="text-[13px]">Manage Patients</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/clinic/notifications')}
+                    className="p-3.5 focus:bg-primary/5 focus:text-primary rounded-xl cursor-pointer font-bold transition-all border border-transparent focus:border-primary/10"
+                  >
+                    <Bell size={18} className="mr-3 text-primary/70" />
+                    <span className="text-[13px]">Activity Logs</span>
                   </DropdownMenuItem>
                 </>
               ) : (
