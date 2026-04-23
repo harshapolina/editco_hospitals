@@ -22,13 +22,13 @@ const NotificationsTab = () => {
     <DashboardLayout activeTab="dashboard" role={role}>
       <div className="flex flex-col gap-8 max-w-[800px] mx-auto">
         <button 
-          onClick={() => navigate(role === 'doctor' ? '/doctor/dashboard' : role === 'patient' ? '/patient/dashboard' : '/clinic/dashboard')}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm text-[#999] hover:text-primary transition-colors w-fit group"
         >
           <div className="w-8 h-8 rounded-full border border-[#EEEEEE] flex items-center justify-center group-hover:border-primary/20 group-hover:bg-primary/5 transition-all">
             <ArrowLeft size={16} />
           </div>
-          <span className="font-semibold">Back to Dashboard</span>
+          <span className="font-semibold">Back</span>
         </button>
 
         <div>

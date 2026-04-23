@@ -249,7 +249,7 @@ const DashboardLayout = ({
                 </div>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[240px] p-2 rounded-2xl shadow-2xl border-[#EEEEEE] animate-in slide-in-from-top-4 duration-300">
+            <DropdownMenuContent align="end" className="w-[260px] p-2 rounded-2xl shadow-2xl border border-[#EEEEEE] bg-white animate-in slide-in-from-top-4 duration-300">
               <div className="flex items-center gap-3 p-3.5 mb-2 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10">
                 <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-lg shadow-xl shadow-primary/20">
                   {role === 'patient' 

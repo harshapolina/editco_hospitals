@@ -41,7 +41,7 @@ const ClinicRegister = () => {
       <div className="w-full md:w-1/3 bg-primary p-12 flex flex-col justify-between text-white relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between h-full">
           <div className="flex items-center justify-between mb-20">
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/get-started')}>
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate(-1)}>
               <button className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
                 <Plus className="w-4 h-4 text-white rotate-45" strokeWidth={3} />
               </button>

@@ -258,20 +258,29 @@ const DoctorsTab = () => {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button className={cn(
-                                  "w-[32px] h-[32px] rounded-full border flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm",
-                                  doctor.status === 'available' ? 'bg-green-50 border-green-200' : 
-                                  doctor.status === 'busy' ? 'bg-red-50 border-red-200' :
-                                  'bg-orange-50 border-orange-200'
+                                  "h-[32px] px-3 rounded-full border flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm bg-white",
+                                  doctor.status === 'available' ? 'border-green-200' : 
+                                  doctor.status === 'busy' ? 'border-red-200' :
+                                  'border-orange-200'
                                 )}>
                                   <div className={cn(
-                                    "w-2.5 h-2.5 rounded-full animate-pulse-subtle",
-                                    doctor.status === 'available' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 
-                                    doctor.status === 'busy' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
-                                    'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]'
+                                    "w-2 h-2 rounded-full animate-pulse-subtle",
+                                    doctor.status === 'available' ? 'bg-green-500' : 
+                                    doctor.status === 'busy' ? 'bg-red-500' :
+                                    'bg-orange-500'
                                   )} />
+                                  <span className={cn(
+                                    "text-[10px] font-bold uppercase tracking-wider",
+                                    doctor.status === 'available' ? 'text-green-600' : 
+                                    doctor.status === 'busy' ? 'text-red-600' :
+                                    'text-orange-600'
+                                  )}>
+                                    {doctor.status}
+                                  </span>
+                                  <ChevronDown size={12} className="text-[#999] ml-0.5 opacity-50" />
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-36 rounded-xl p-1.5 shadow-2xl border-none">
+                              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1.5 shadow-2xl border border-[#EEEEEE] bg-white">
                                 <DropdownMenuItem 
                                   onClick={() => updateDoctor(doctor.id, { status: 'available' })}
                                   className="flex items-center gap-2 rounded-lg cursor-pointer focus:bg-green-50 focus:text-green-600 font-semibold text-xs py-2"

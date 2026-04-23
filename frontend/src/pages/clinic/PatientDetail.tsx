@@ -25,11 +25,11 @@ const PatientDetail = () => {
       <div className="flex flex-col gap-8 pb-10 animate-in slide-in-from-right-10 duration-500">
         {/* Top Nav */}
         <button 
-          onClick={() => navigate(role === 'doctor' ? '/doctor/dashboard' : '/clinic/dashboard/patients')}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm text-[#999] hover:text-primary transition-colors mb-2"
         >
           <ArrowLeft size={16} />
-          {role === 'doctor' ? 'Back to Dashboard' : 'Back to Patients'}
+          Back to Previous Page
         </button>
 
         {/* SECTION A — Patient Profile Header */}

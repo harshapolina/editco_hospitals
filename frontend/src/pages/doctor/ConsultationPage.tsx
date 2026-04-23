@@ -240,7 +240,7 @@ const ConsultationPage = () => {
       {/* PROFESSIONAL CLINICAL HEADER */}
       <header className="h-16 border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 px-8 flex items-center justify-between">
          <div className="flex items-center gap-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/doctor/dashboard')} className="rounded-xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100">
                <ChevronLeft size={18} className="text-gray-400" />
             </Button>
             <div className="flex flex-col">
@@ -630,7 +630,7 @@ const ConsultationPage = () => {
                   </div>
                </div>
                <div className="flex gap-4">
-                  <Button variant="ghost" className="h-14 px-10 rounded-2xl font-black text-gray-400 text-sm active:scale-[0.98]" onClick={() => navigate('/doctor/dashboard')}>
+                  <Button variant="ghost" className="h-14 px-10 rounded-2xl font-black text-gray-400 text-sm active:scale-[0.98]" onClick={() => navigate(-1)}>
                      Exit Workspace
                   </Button>
                   <Button className="h-14 px-16 rounded-2xl font-black bg-teal-600 hover:bg-teal-700 text-white text-lg shadow-2xl shadow-teal-600/30 transition-all hover:scale-[1.05] active:scale-[0.95]" onClick={handleSaveResult}>

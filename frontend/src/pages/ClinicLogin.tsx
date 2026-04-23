@@ -33,7 +33,7 @@ const ClinicLogin = () => {
       <div className="w-full md:w-1/2 bg-primary p-12 flex flex-col justify-between text-white relative overflow-hidden">
         {/* Logo & Back */}
         <div className="flex items-center justify-between mb-20 relative z-10">
-          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/get-started')}>
+          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate(-1)}>
              <button className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
                <Plus className="w-4 h-4 text-white rotate-45" strokeWidth={3} />
              </button>

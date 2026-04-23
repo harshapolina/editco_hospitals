@@ -74,11 +74,11 @@ const DoctorDetail = () => {
         {/* Top Nav */}
         <div className="flex items-center justify-between">
           <button 
-            onClick={() => navigate(role === 'doctor' ? '/doctor/dashboard' : '/clinic/dashboard')}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-sm text-[#999] hover:text-primary transition-colors"
           >
             <ArrowLeft size={16} />
-            {role === 'doctor' ? 'Back to Dashboard' : 'Back to Doctors'}
+            {role === 'doctor' ? 'Back to Dashboard' : 'Back to Previous Page'}
           </button>
           {role === 'clinic' && (
             isEditing ? (

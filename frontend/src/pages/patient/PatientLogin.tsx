@@ -36,7 +36,7 @@ const PatientLogin = () => {
       <Button 
         variant="ghost" 
         className="absolute top-8 left-8 z-20 gap-2 text-gray-500 hover:text-teal-600 rounded-xl"
-        onClick={() => navigate('/get-started')}
+        onClick={() => navigate(-1)}
       >
         <ChevronLeft size={18} /> Back
       </Button>
