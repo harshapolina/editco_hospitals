@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit2, History } from "lucide-react";
+import { ArrowLeft, Edit2, History, Stethoscope } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useParams, useNavigate } from "react-router-dom";
 import { Doctor, specialties } from "@/lib/mockData";
@@ -9,7 +9,7 @@ import { DoctorRegisterPayload } from "@/types/auth";
 const DoctorDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { doctors, updateDoctor, patients, currentDoctor, currentClinic } = useAppContext();
+  const { doctors, updateDoctor, patients, currentDoctor, currentClinic, loading } = useAppContext();
   
   // Determine role dynamically and type it for layout compatibility
   const role = (currentDoctor ? 'doctor' : currentClinic ? 'clinic' : 'clinic') as 'clinic' | 'doctor' | 'patient';
@@ -45,10 +45,32 @@ const DoctorDetail = () => {
     if (doctor) setEditData(doctor);
   }, [doctor]);
 
-  if (!doctor) return <div>Doctor not found</div>;
+  if (loading && !doctor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-600 rounded-full animate-spin" />
+          <p className="text-gray-500 font-medium animate-pulse">Loading Doctor Profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6">
+          <Stethoscope size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Doctor Not Found</h2>
+        <p className="text-[#999] mb-8 text-center max-w-xs">The medical professional record you're looking for could not be retrieved.</p>
+        <button onClick={() => navigate(-1)} className="px-8 py-3 bg-primary text-white rounded-xl font-bold">Return Back</button>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
-    await updateDoctor((doctor._id || doctor.id), editData);
+    await updateDoctor((doctor._id || doctor.id), editData as Partial<Doctor>);
     setIsEditing(false);
   };
 

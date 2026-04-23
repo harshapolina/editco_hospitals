@@ -10,7 +10,7 @@ import { Prescription } from "@/lib/mockData";
 const PatientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { patients, currentDoctor, currentClinic } = useAppContext();
+  const { patients, currentDoctor, currentClinic, loading } = useAppContext();
   
   // Determine role dynamically based on logged-in user
   const role = currentDoctor ? 'doctor' : currentClinic ? 'clinic' : 'clinic';
@@ -18,7 +18,29 @@ const PatientDetail = () => {
   const patient = patients.find(p => p.id === id || p._id === id);
 
 
-  if (!patient) return <div className="p-10 text-center">Patient not found</div>;
+  if (loading && !patient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-600 rounded-full animate-spin" />
+          <p className="text-gray-500 font-medium animate-pulse">Loading Patient Data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+        <div className="w-20 h-20 bg-gray-50 text-gray-300 rounded-3xl flex items-center justify-center mb-6">
+          <User size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Patient Not Found</h2>
+        <p className="text-[#999] mb-8 max-w-xs">We couldn't find the medical records for this patient ID.</p>
+        <button onClick={() => navigate(-1)} className="px-8 py-3 bg-primary text-white rounded-xl font-bold">Back to Patients</button>
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout activeTab={role === 'doctor' ? 'dashboard' : 'patients'} role={role}>

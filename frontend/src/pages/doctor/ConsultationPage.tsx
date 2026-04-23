@@ -37,7 +37,7 @@ type ConsultationState = 'PREVIEW' | 'RECORDING' | 'PROCESSING' | 'RESULT';
 const ConsultationPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { patients, fetchData, currentDoctor, startOP, completeOP } = useAppContext();
+  const { patients, fetchData, currentDoctor, startOP, completeOP, loading } = useAppContext();
   
   const [currentState, setCurrentState] = useState<ConsultationState>('PREVIEW');
   const [isRecording, setIsRecording] = useState(false);
@@ -232,7 +232,40 @@ const ConsultationPage = () => {
     setAiResult({ ...aiResult, prescription: newPrescription });
   };
 
-  if (!patient || !currentDoctor) return null;
+  if (loading && (!patient || !currentDoctor)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFDFD]">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-teal-50 border-t-teal-600 rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Stethoscope size={32} className="text-teal-600/50" />
+            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <h2 className="text-xl font-black text-[#1A1A1A] tracking-tight">Syncing Clinical Workspace</h2>
+            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Preparing patient data & AI pipeline...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!patient || !currentDoctor) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+        <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[32px] flex items-center justify-center mb-8 shadow-xl shadow-red-100/50">
+          <Activity size={48} />
+        </div>
+        <h2 className="text-3xl font-black text-[#1A1A1A] tracking-tighter mb-3">Session Unavailable</h2>
+        <p className="text-gray-400 font-bold max-w-md mb-10 text-lg">We couldn't initialize the consultation session. The patient record may have been moved or your session has expired.</p>
+        <div className="flex gap-4">
+           <Button variant="outline" className="h-14 px-10 rounded-2xl font-black border-gray-200" onClick={() => navigate(-1)}>Go Back</Button>
+           <Button className="h-14 px-10 rounded-2xl font-black bg-[#1A1A1A] hover:bg-black text-white shadow-xl" onClick={() => navigate('/doctor/dashboard')}>Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col font-sans selection:bg-teal-100">
